@@ -3,13 +3,15 @@
 #include <EEPROM.h>
 
 #define IR_PIN        A5  //PIN данных ИК фототранзистора
-#define RED_PIN       10   //PIN управления транзистором красного канала
-#define GREEN_PIN     11   //PIN управления транзистором зеленого канала
+#define RED_PIN       5   //PIN управления транзистором красного канала
+#define GREEN_PIN     6   //PIN управления транзистором зеленого канала
 #define BLUE_PIN      9   //PIN управления транзистором синего канала
-#define AUTO_MODE_LED_PIN  3   //PIN сигнализирующий о включении авто мода
+#define AUTO_MODE_LED_PIN  2   //PIN сигнализирующий о включении авто мода
 #define PHOTO_RES_PIN A0  //PIN аналогового входа фоторезистора 
 #define LIGHT_SW_ON   200 //Порог включения светодиодной ленты
 #define LIGHT_SW_OFF  100 //Порог выключения светодиодной ленты
+
+#define PWM_FREQ  35 //frequency (in Hz)
 
 #define BUT_OFF 		0xF740BF
 #define BUT_ON  		0xF7C03F
@@ -71,12 +73,43 @@ void setup() {
 
 	initRGBFromEEPROM();
 
-	//Частота ШИМ
-	// TCCR1B = TCCR1B & 0b11111000 | 0x03;
-	// TCCR2B = TCCR2B & 0b11111000 | 0x04;
+	setPwmFrequency(RED_PIN, 64);
+	setPwmFrequency(GREEN_PIN, 64);
+	setPwmFrequency(BLUE_PIN, 32);
 
 	Serial.begin(9600);
 	irrecv.enableIRIn(); 
+}
+
+void setPwmFrequency(int pin, int divisor) {
+  byte mode;
+  if(pin == 5 || pin == 6 || pin == 9 || pin == 10) {
+    switch(divisor) {
+      case 1: mode = 0x01; break;
+      case 8: mode = 0x02; break;
+      case 64: mode = 0x03; break;
+      case 256: mode = 0x04; break;
+      case 1024: mode = 0x05; break;
+      default: return;
+    }
+    if(pin == 5 || pin == 6) {
+      TCCR0B = TCCR0B & 0b11111000 | mode;
+    } else {
+      TCCR1B = TCCR1B & 0b11111000 | mode;
+    }
+  } else if(pin == 3 || pin == 11) {
+    switch(divisor) {
+      case 1: mode = 0x01; break;
+      case 8: mode = 0x02; break;
+      case 32: mode = 0x03; break;
+      case 64: mode = 0x04; break;
+      case 128: mode = 0x05; break;
+      case 256: mode = 0x06; break;
+      case 1024: mode = 0x7; break;
+      default: return;
+    }
+    TCCR2B = TCCR2B & 0b11111000 | mode;
+  }
 }
 
 void initRGBFromEEPROM() {
@@ -131,52 +164,52 @@ void checkIR() {
 		      break;
 		    case BUT_1:
 		    	buttonPressMsg("1");
-					//colorProcessing(COL_1);
+				colorProcessing(COL_1);
 		      break;
-		   //  case BUT_2:
-		   //  	buttonPressMsg("2");
-					// colorProcessing(COL_2);
-		   //    break;
-		   //  case BUT_3:
-		   //    buttonPressMsg("3");
-					// colorProcessing(COL_3);
-		   //    break;
-		   //  case BUT_4:
-		   //    buttonPressMsg("4");
-					// colorProcessing(COL_4);
-		   //    break;
-		   //  case BUT_5:
-		   //    buttonPressMsg("5");
-					// colorProcessing(COL_5);
-		   //    break;
-		   //  case BUT_6:
-		   //    buttonPressMsg("6");
-					// colorProcessing(COL_6);
-		   //    break;
-		   //  case BUT_7:
-		   //    buttonPressMsg("7");
-					// colorProcessing(COL_7);
-		   //    break;
-		   //  case BUT_8:
-		   //    buttonPressMsg("8");
-					// colorProcessing(COL_8);
-		   //    break;
-		   //  case BUT_9:
-		   //    buttonPressMsg("9");
-					// colorProcessing(COL_9);
-		   //    break;
-		   //  case BUT_10:
-		   //    buttonPressMsg("10");
-					// colorProcessing(COL_10);
-		   //    break;
-		   //  case BUT_11:
-		   //    buttonPressMsg("11");
-					// colorProcessing(COL_11);
-		   //    break;
-		   //  case BUT_12:
-		   //    buttonPressMsg("12");
-					// colorProcessing(COL_12);
-		   //    break;
+		    case BUT_2:
+		    	buttonPressMsg("2");
+					colorProcessing(COL_2);
+		      break;
+		    case BUT_3:
+		      buttonPressMsg("3");
+					colorProcessing(COL_3);
+		      break;
+		    case BUT_4:
+		      buttonPressMsg("4");
+					colorProcessing(COL_4);
+		      break;
+		    case BUT_5:
+		      buttonPressMsg("5");
+					colorProcessing(COL_5);
+		      break;
+		    case BUT_6:
+		      buttonPressMsg("6");
+					colorProcessing(COL_6);
+		      break;
+		    case BUT_7:
+		      buttonPressMsg("7");
+					colorProcessing(COL_7);
+		      break;
+		    case BUT_8:
+		      buttonPressMsg("8");
+					colorProcessing(COL_8);
+		      break;
+		    case BUT_9:
+		      buttonPressMsg("9");
+					colorProcessing(COL_9);
+		      break;
+		    case BUT_10:
+		      buttonPressMsg("10");
+					colorProcessing(COL_10);
+		      break;
+		    case BUT_11:
+		      buttonPressMsg("11");
+					colorProcessing(COL_11);
+		      break;
+		    case BUT_12:
+		      buttonPressMsg("12");
+					colorProcessing(COL_12);
+		      break;
 		    default:
 		    ;
 		      // do something
@@ -237,40 +270,40 @@ void colorProcessing(int color) {
 				changeColor(0, 0, 0);
 				break;
 			case COL_1:
-				changeColor(208, 69, 20);
+				changeColor(250,113,66);
 				break;
 			case COL_2:
-				changeColor(0, 157, 60);
+				changeColor(112, 192, 158);
 				break;
 		  case COL_3:
-				changeColor(0, 58, 165);
+				changeColor(30, 155, 240);
 				break;
 		  case COL_4:
-				changeColor(255, 135, 0);
+				changeColor(255, 141, 76);
 				break;
 		  case COL_5:
-				changeColor(0, 150, 154);
+				changeColor(90, 202, 244);
 				break;
 			case COL_6:
-				changeColor(41, 30, 72);
+				changeColor(53, 38, 65);
 				break;
 			case COL_7:
-				changeColor(222, 145, 31);
+				changeColor(246, 182, 52);
 				break;
 			case COL_8:
-				changeColor(0, 103, 134);
+				changeColor(30, 168, 170);
 				break;
 			case COL_9:
-				changeColor(79, 38, 80);
+				changeColor(87, 58, 147);
 				break;
 			case COL_10:
 				changeColor(255, 255, 0);
 				break;
 			case COL_11:
-				changeColor(0, 79, 138);
+				changeColor(14, 119, 138);
 				break;
 		  case COL_12:
-				changeColor(175, 46, 134);
+				changeColor(255, 81, 154);
 				break;
 	    default:
 	      ;
@@ -286,7 +319,7 @@ void changeColor(byte r, byte g, byte b) {
 	Serial.println(g);
 	Serial.println(b);
 
-	//saveRGBToEEPROM(r, g, b);
+	saveRGBToEEPROM(r, g, b);
 }
 
 void saveRGBToEEPROM(byte r, byte g, byte b) {
